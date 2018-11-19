@@ -12,4 +12,4 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 replay_memory_capacity = 1000
 
 
-n_step = 3
+n_step = 1

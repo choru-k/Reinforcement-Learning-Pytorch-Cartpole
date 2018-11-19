@@ -59,9 +59,13 @@ class QNet(nn.Module):
     def forward(self, x):
         x = F.relu(self.fc(x))
         adv = self.fc_adv(x)
+        adv = adv.view(-1, self.num_outputs)
         val = self.fc_val(x)
+        val = val.view(-1, 1)
 
-        qvalue = val + (adv - adv.mean())
+
+        qvalue = val + (adv - adv.mean(dim=1, keepdim=True))
+        # (batch, action) = (batch) + ((batch, action) - (batch))
         return qvalue
 
     @classmethod
@@ -72,14 +76,17 @@ class QNet(nn.Module):
         rewards = torch.Tensor(rewards)
         masks = torch.Tensor(masks)
 
-        pred = online_net(states).squeeze(1)
-        _, action_from_online_net = online_net(next_states).squeeze(1).max(1)
+        pred = online_net(states)
+        qvalue = online_net(next_states)
+
+        _, action_from_online_net = online_net(next_states).max(1)
+
         target_net.reset_noise()
         next_pred = target_net(next_states).squeeze(1)
 
         pred = torch.sum(pred.mul(actions), dim=1)
 
-        target = rewards + masks * gamma * next_pred.gather(1, action_from_online_net.unsqueeze(1)).squeeze(1)
+        target = rewards + masks * (gamma ** (n_step + 1)) * next_pred.gather(1, action_from_online_net.unsqueeze(1)).squeeze(1)
 
         td_error = pred - target.detach()
 
