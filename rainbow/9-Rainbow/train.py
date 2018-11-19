@@ -78,7 +78,7 @@ def main():
                 batch, weights = memory.sample(batch_size, oneline_net, target_net, beta)
                 loss = QNet.train_model(oneline_net, target_net, optimizer, batch, weights)
 
-                if steps % update_target:
+                if steps % update_target == 0:
                     update_target_model(oneline_net, target_net)
 
         score = score if score == 500.0 else score + 1
