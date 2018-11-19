@@ -8,17 +8,10 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from model import QNet
-from memory import Memory
+from memory import Memory_With_TDError
 from tensorboardX import SummaryWriter
 
-from config import env_name, initial_exploration, batch_size, update_target, goal_score, log_interval, device, replay_memory_capacity, lr
-
-
-def get_action(state, target_net, epsilon, env):
-    if np.random.rand() <= epsilon:
-        return env.action_space.sample()
-    else:
-        return target_net.get_action(state)
+from config import env_name, initial_exploration, batch_size, update_target, goal_score, log_interval, device, replay_memory_capacity, lr, beta_start
 
 def update_target_model(oneline_net, target_net):
     # Target <- Net
@@ -46,10 +39,11 @@ def main():
     target_net.to(device)
     oneline_net.train()
     target_net.train()
-    memory = Memory(replay_memory_capacity)
+    memory = Memory_With_TDError(replay_memory_capacity)
     running_score = 0
-    epsilon = 1.0
     steps = 0
+    beta = beta_start
+    loss = 0
 
     for e in range(3000):
         done = False
@@ -62,7 +56,7 @@ def main():
         while not done:
             steps += 1
 
-            action = get_action(state, target_net, epsilon, env)
+            action = target_net.get_action(state)
             next_state, reward, done, _ = env.step(action)
 
             next_state = torch.Tensor(next_state)
@@ -78,11 +72,11 @@ def main():
             state = next_state
 
             if steps > initial_exploration:
-                epsilon -= 0.00005
-                epsilon = max(epsilon, 0.1)
+                beta += 0.00005
+                beta = min(1, beta)
 
-                batch = memory.sample(batch_size)
-                QNet.train_model(oneline_net, target_net, optimizer, batch)
+                batch, weights = memory.sample(batch_size, oneline_net, target_net, beta)
+                loss = QNet.train_model(oneline_net, target_net, optimizer, batch, weights)
 
                 if steps % update_target:
                     update_target_model(oneline_net, target_net)
@@ -90,9 +84,10 @@ def main():
         score = score if score == 500.0 else score + 1
         running_score = 0.99 * running_score + 0.01 * score
         if e % log_interval == 0:
-            print('{} episode | score: {:.2f} | epsilon: {:.2f}'.format(
-                e, running_score, epsilon))
-            writer.add_scalar('log/score', float(score), running_score)
+            print('{} episode | score: {:.2f} |  beta: {:.2f}'.format(
+                e, running_score, beta))
+            writer.add_scalar('log/score', float(running_score), e)
+            writer.add_scalar('log/loss', float(loss), e)
 
         if running_score > goal_score:
             break

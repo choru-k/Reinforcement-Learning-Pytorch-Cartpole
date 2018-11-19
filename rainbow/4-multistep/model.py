@@ -34,7 +34,7 @@ class QNet(nn.Module):
 
         pred = torch.sum(pred.mul(actions), dim=1)
 
-        target = rewards + masks * (gamma ** (n_step + 1)) * next_pred.max(1)[0]
+        target = rewards + masks * (gamma ** n_step) * next_pred.max(1)[0]
 
         loss = F.mse_loss(pred, target.detach())
         optimizer.zero_grad()
