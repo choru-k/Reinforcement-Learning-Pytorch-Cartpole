@@ -22,14 +22,14 @@ class QNet(nn.Module):
         return qvalue
 
     @classmethod
-    def get_td_error(cls, oneline_net, target_net, state, next_state, action, reward, mask):
+    def get_td_error(cls, online_net, target_net, state, next_state, action, reward, mask):
         state = torch.stack(state)
         next_state = torch.stack(next_state)
         action = torch.Tensor(action)
         reward = torch.Tensor(reward)
         mask = torch.Tensor(mask)
 
-        pred = oneline_net(state).squeeze(1)
+        pred = online_net(state).squeeze(1)
         next_pred = target_net(next_state).squeeze(1)
 
         pred = torch.sum(pred.mul(action), dim=1)
@@ -41,14 +41,16 @@ class QNet(nn.Module):
         return td_error
 
     @classmethod
-    def train_model(cls, oneline_net, target_net, optimizer, batch, weights):
-        td_error = cls.get_td_error(oneline_net, target_net, batch.state, batch.next_state, batch.action, batch.reward, batch.mask)
+    def train_model(cls, online_net, target_net, optimizer, batch, weights):
+        td_error = cls.get_td_error(online_net, target_net, batch.state, batch.next_state, batch.action, batch.reward, batch.mask)
         loss = pow(td_error, 2) * weights
         loss = loss.mean()
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        return loss
 
     def get_action(self, input):
         qvalue = self.forward(input)

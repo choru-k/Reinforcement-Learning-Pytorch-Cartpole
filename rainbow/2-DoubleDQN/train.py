@@ -21,9 +21,9 @@ def get_action(state, target_net, epsilon, env):
         return target_net.get_action(state)
 
 
-def update_target_model(oneline_net, target_net):
+def update_target_model(online_net, target_net):
     # Target -> Net
-    target_net.load_state_dict(oneline_net.state_dict())
+    target_net.load_state_dict(online_net.state_dict())
 
 
 def main():
@@ -36,21 +36,22 @@ def main():
     print('state size:', num_inputs)
     print('action size:', num_actions)
 
-    oneline_net = DoubleDQNet(num_inputs, num_actions)
+    online_net = DoubleDQNet(num_inputs, num_actions)
     target_net = DoubleDQNet(num_inputs, num_actions)
-    update_target_model(oneline_net, target_net)
+    update_target_model(online_net, target_net)
 
-    optimizer = optim.Adam(oneline_net.parameters(), lr=lr)
+    optimizer = optim.Adam(online_net.parameters(), lr=lr)
     writer = SummaryWriter('logs')
 
-    oneline_net.to(device)
+    online_net.to(device)
     target_net.to(device)
-    oneline_net.train()
+    online_net.train()
     target_net.train()
     memory = Memory(replay_memory_capacity)
     running_score = 0
     epsilon = 1.0
     steps = 0
+    loss = 0
 
     for e in range(3000):
         done = False
@@ -82,10 +83,10 @@ def main():
                 epsilon = max(epsilon, 0.1)
 
                 batch = memory.sample(batch_size)
-                DoubleDQNet.train_model(oneline_net, target_net, optimizer, batch)
+                loss = DoubleDQNet.train_model(online_net, target_net, optimizer, batch)
 
                 if steps % update_target:
-                    update_target_model(oneline_net, target_net)
+                    update_target_model(online_net, target_net)
 
         score = score if score == 500.0 else score + 1
         running_score = 0.99 * running_score + 0.01 * score
@@ -93,6 +94,7 @@ def main():
             print('{} episode | score: {:.2f} | epsilon: {:.2f}'.format(
                 e, running_score, epsilon))
             writer.add_scalar('log/score', float(running_score), e)
+            writer.add_scalar('log/loss', float(loss), e)
 
         if running_score > goal_score:
             break

@@ -22,14 +22,14 @@ class QNet(nn.Module):
         return qvalue
 
     @classmethod
-    def train_model(cls, oneline_net, target_net, optimizer, batch):
+    def train_model(cls, online_net, target_net, optimizer, batch):
         states = torch.stack(batch.state)
         next_states = torch.stack(batch.next_state)
         actions = torch.Tensor(batch.action).float()
         rewards = torch.Tensor(batch.reward)
         masks = torch.Tensor(batch.mask)
 
-        pred = oneline_net(states).squeeze(1)
+        pred = online_net(states).squeeze(1)
         next_pred = target_net(next_states).squeeze(1)
 
         pred = torch.sum(pred.mul(actions), dim=1)
@@ -40,6 +40,8 @@ class QNet(nn.Module):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        return loss
 
     def get_action(self, input):
         qvalue = self.forward(input)

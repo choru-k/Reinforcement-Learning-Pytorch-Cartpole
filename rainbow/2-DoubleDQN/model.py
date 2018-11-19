@@ -22,26 +22,28 @@ class DoubleDQNet(nn.Module):
         return qvalue
 
     @classmethod
-    def train_model(cls, oneline_net, target_net, optimizer, batch):
+    def train_model(cls, online_net, target_net, optimizer, batch):
         states = torch.stack(batch.state)
         next_states = torch.stack(batch.next_state)
         actions = torch.Tensor(batch.action).float()
         rewards = torch.Tensor(batch.reward)
         masks = torch.Tensor(batch.mask)
 
-        pred = oneline_net(states).squeeze(1)
-        _, action_from_oneline_net = oneline_net(next_states).squeeze(1).max(1)
+        pred = online_net(states).squeeze(1)
+        _, action_from_online_net = online_net(next_states).squeeze(1).max(1)
         next_pred = target_net(next_states).squeeze(1)
 
         pred = torch.sum(pred.mul(actions), dim=1)
 
-        target = rewards + masks * gamma * next_pred.gather(1, action_from_oneline_net.unsqueeze(1)).squeeze(1)
+        target = rewards + masks * gamma * next_pred.gather(1, action_from_online_net.unsqueeze(1)).squeeze(1)
 
 
         loss = F.mse_loss(pred, target.detach())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        return loss
 
     def get_action(self, input):
         qvalue = self.forward(input)

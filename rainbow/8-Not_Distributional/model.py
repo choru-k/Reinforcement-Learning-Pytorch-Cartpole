@@ -65,28 +65,29 @@ class QNet(nn.Module):
         return qvalue
 
     @classmethod
-    def get_td_error(cls, oneline_net, target_net, states, next_states, actions, rewards, masks):
+    def get_td_error(cls, online_net, target_net, states, next_states, actions, rewards, masks):
         states = torch.stack(states)
         next_states = torch.stack(next_states)
         actions = torch.Tensor(actions)
         rewards = torch.Tensor(rewards)
         masks = torch.Tensor(masks)
 
-        pred = oneline_net(states).squeeze(1)
-        _, action_from_oneline_net = oneline_net(next_states).squeeze(1).max(1)
+        pred = online_net(states).squeeze(1)
+        _, action_from_online_net = online_net(next_states).squeeze(1).max(1)
+        target_net.reset_noise()
         next_pred = target_net(next_states).squeeze(1)
 
         pred = torch.sum(pred.mul(actions), dim=1)
 
-        target = rewards + masks * gamma * next_pred.gather(1, action_from_oneline_net.unsqueeze(1)).squeeze(1)
+        target = rewards + masks * gamma * next_pred.gather(1, action_from_online_net.unsqueeze(1)).squeeze(1)
 
         td_error = pred - target.detach()
 
         return td_error
 
     @classmethod
-    def train_model(cls, oneline_net, target_net, optimizer, batch, weights):
-        td_error = cls.get_td_error(oneline_net, target_net, batch.state, batch.next_state, batch.action, batch.reward, batch.mask)
+    def train_model(cls, online_net, target_net, optimizer, batch, weights):
+        td_error = cls.get_td_error(online_net, target_net, batch.state, batch.next_state, batch.action, batch.reward, batch.mask)
 
         loss = pow(td_error, 2) * weights
         loss = loss.mean()
@@ -95,8 +96,13 @@ class QNet(nn.Module):
         loss.backward()
         optimizer.step()
 
+        return loss
+
     def get_action(self, input):
-        self.fc_adv.reset_noise()
+        self.reset_noise()
         qvalue = self.forward(input)
         _, action = torch.max(qvalue, 1)
         return action.numpy()[0]
+
+    def reset_noise(self):
+        self.fc_adv.reset_noise()

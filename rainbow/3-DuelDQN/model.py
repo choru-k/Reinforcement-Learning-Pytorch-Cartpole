@@ -20,20 +20,22 @@ class DuelDQNet(nn.Module):
     def forward(self, x):
         x = F.relu(self.fc(x))
         adv = self.fc_adv(x)
+        adv = adv.view(-1, self.num_outputs)
         val = self.fc_val(x)
+        val = val.view(-1, 1)
 
-        qvalue = val + (adv - adv.mean())
+        qvalue = val + (adv - adv.mean(dim=1, keepdim=True))
         return qvalue
 
     @classmethod
-    def train_model(cls, oneline_net, target_net, optimizer, batch):
+    def train_model(cls, online_net, target_net, optimizer, batch):
         states = torch.stack(batch.state)
         next_states = torch.stack(batch.next_state)
         actions = torch.Tensor(batch.action).float()
         rewards = torch.Tensor(batch.reward)
         masks = torch.Tensor(batch.mask)
 
-        pred = oneline_net(states).squeeze(1)
+        pred = online_net(states).squeeze(1)
         next_pred = target_net(next_states).squeeze(1)
 
         pred = torch.sum(pred.mul(actions), dim=1)
@@ -45,6 +47,8 @@ class DuelDQNet(nn.Module):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        return loss
 
     def get_action(self, input):
         qvalue = self.forward(input)

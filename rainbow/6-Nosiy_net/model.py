@@ -55,20 +55,20 @@ class QNet(nn.Module):
                 nn.init.xavier_uniform(m.weight)
 
     def forward(self, x):
-        self.fc2.reset_noise()
         x = F.relu(self.fc1(x))
         qvalue = self.fc2(x)
         return qvalue
 
     @classmethod
-    def train_model(cls, oneline_net, target_net, optimizer, batch):
+    def train_model(cls, online_net, target_net, optimizer, batch):
         states = torch.stack(batch.state)
         next_states = torch.stack(batch.next_state)
         actions = torch.Tensor(batch.action).float()
         rewards = torch.Tensor(batch.reward)
         masks = torch.Tensor(batch.mask)
 
-        pred = oneline_net(states).squeeze(1)
+        target_net.fc2.reset_noise()
+        pred = online_net(states).squeeze(1)
         next_pred = target_net(next_states).squeeze(1)
 
         pred = torch.sum(pred.mul(actions), dim=1)
@@ -80,7 +80,10 @@ class QNet(nn.Module):
         loss.backward()
         optimizer.step()
 
+        return loss
+
     def get_action(self, input):
+        self.fc2.reset_noise()
         qvalue = self.forward(input)
         _, action = torch.max(qvalue, 1)
         return action.numpy()[0]

@@ -66,14 +66,14 @@ class Distributional_C51(nn.Module):
 
 
     @classmethod
-    def train_model(cls, oneline_net, target_net, optimizer, batch):
+    def train_model(cls, online_net, target_net, optimizer, batch):
         states = torch.stack(batch.state)
         next_states = torch.stack(batch.next_state)
         actions = torch.Tensor(batch.action).int()
         rewards = torch.Tensor(batch.reward)
         masks = torch.Tensor(batch.mask)
 
-        z_space = oneline_net.z.repeat(batch_size, oneline_net.num_outputs, 1)
+        z_space = online_net.z.repeat(batch_size, online_net.num_outputs, 1)
         prob_next_states = target_net(next_states)
         Q_next_state = torch.sum(prob_next_states * z_space, 2)
         next_actions = torch.argmax(Q_next_state, 1)
@@ -84,10 +84,12 @@ class Distributional_C51(nn.Module):
 
         m_prob = m_prob / torch.sum(m_prob, dim=1, keepdim=True)
         expand_dim_action = torch.unsqueeze(actions, -1)
-        p = torch.sum(oneline_net(states) * expand_dim_action.float(), dim=1)
-        loss = -torch.sum(m_prob * torch.log(p + 1e-20))
+        p = torch.sum(online_net(states) * expand_dim_action.float(), dim=1)
+        loss = -torch.sum(m_prob * torch.log(p + 1e-20), 1)
         loss = loss.mean()
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        return loss
