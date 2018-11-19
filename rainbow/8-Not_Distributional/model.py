@@ -86,7 +86,7 @@ class QNet(nn.Module):
 
         pred = torch.sum(pred.mul(actions), dim=1)
 
-        target = rewards + masks * (gamma ** (n_step + 1)) * next_pred.gather(1, action_from_online_net.unsqueeze(1)).squeeze(1)
+        target = rewards + masks * (gamma ** n_step) * next_pred.gather(1, action_from_online_net.unsqueeze(1)).squeeze(1)
 
         td_error = pred - target.detach()
 

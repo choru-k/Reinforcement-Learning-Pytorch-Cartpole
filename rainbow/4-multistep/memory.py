@@ -1,6 +1,7 @@
 import random
 from collections import namedtuple, deque
-from config import gamma, n_step
+from config import n_step, gamma
+
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward', 'mask'))
 
 
@@ -8,25 +9,31 @@ class Memory(object):
     def __init__(self, capacity):
         self.memory = deque(maxlen=capacity)
         self.capacity = capacity
+        self.reset_local()
+
+    def reset_local(self):
+        self.local_step = 0
+        self.local_state = None
+        self.local_action = None
+        self.local_rewards = []
 
     def push(self, state, next_state, action, reward, mask):
-        self.memory.append(Transition(state, next_state, action, reward, mask))
+        self.local_step += 1
+        self.local_rewards.append(reward)
+        if self.local_step == 1:
+            self.local_state = state
+            self.local_action = action
+        if self.local_step == n_step:
+            reward = 0
+            for idx, local_reward in enumerate(self.local_rewards):
+                reward += (gamma ** idx) * local_reward
+            self.memory.append(Transition(self.local_state, next_state, self.local_action, reward, mask))
+            self.reset_local()
+        if mask == 0:
+            self.reset_local()
 
     def sample(self, batch_size):
-        # 1 ~ n - step 까지의 경험 중에서 batch_size 만큼 선택
-        # reward 변경
-        transitions = []
-        transition_start_idxes = random.sample(range(len(self.memory) - (n_step - 1)), batch_size)
-        
-        for transition_start_idx in transition_start_idxes:
-            state = self.memory[transition_start_idx].state
-            action = self.memory[transition_start_idx].action
-            next_state = self.memory[transition_start_idx + n_step - 1].next_state
-            mask = self.memory[transition_start_idx + n_step - 1].mask
-            reward = 0
-            for step in range(n_step):
-                reward += (gamma ** step) * self.memory[transition_start_idx + step].reward
-            transitions.append(Transition(state, next_state, action, reward, mask))
+        transitions = random.sample(self.memory, batch_size)
         batch = Transition(*zip(*transitions))
         return batch
 

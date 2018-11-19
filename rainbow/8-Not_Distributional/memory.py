@@ -14,9 +14,31 @@ class Memory_With_TDError(object):
         self.memory_probabiliy = []
         self.capacity = capacity
         self.position = 0
+        self.reset_local()
+
+    def reset_local(self):
+        self.local_step = 0
+        self.local_state = None
+        self.local_action = None
+        self.local_rewards = []
 
     def push(self, state, next_state, action, reward, mask):
-        """Saves a transition."""
+        self.local_step += 1
+        self.local_rewards.append(reward)
+        if self.local_step == 1:
+            self.local_state = state
+            self.local_action = action
+        if self.local_step == n_step:
+            reward = 0
+            for idx, local_reward in enumerate(self.local_rewards):
+                reward += (gamma ** idx) * local_reward
+            self.push_to_memory(self.local_state, next_state, self.local_action, reward, mask)
+            self.reset_local()
+        if mask == 0:
+            self.reset_local()
+
+
+    def push_to_memory(self, state, next_state, action, reward, mask):
         if len(self.memory) > 0:
             max_probability = max(self.memory_probabiliy)
         else:
@@ -32,24 +54,11 @@ class Memory_With_TDError(object):
         self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size, net, target_net, beta):
-        memory_probabiliy = self.memory_probabiliy[:(len(self.memory_probabiliy) - n_step)]
-        probability_sum = sum(memory_probabiliy)
-        p = [probability / probability_sum for probability in memory_probabiliy]
-        # print(len(self.memory_probabiliy))
+        probability_sum = sum(self.memory_probabiliy)
+        p = [probability / probability_sum for probability in self.memory_probabiliy]
 
-        indexes = np.random.choice(np.arange(len(self.memory) - n_step), batch_size, p=p)
-        transitions = []
-        for transition_start_idx in indexes:
-            state = self.memory[transition_start_idx].state
-            action = self.memory[transition_start_idx].action
-            next_state = self.memory[transition_start_idx + n_step].next_state
-            mask = self.memory[transition_start_idx + n_step].mask
-            reward = 0
-            for step in range(0, n_step + 1):
-                idx = transition_start_idx + step
-                reward += (gamma ** step) * self.memory[idx].reward
-            transitions.append(Transition(state, next_state, action, reward, mask))
-
+        indexes = np.random.choice(np.arange(len(self.memory)), batch_size, p=p)
+        transitions = [self.memory[idx] for idx in indexes]
         transitions_p = [p[idx] for idx in indexes]
         batch = Transition(*zip(*transitions))
 

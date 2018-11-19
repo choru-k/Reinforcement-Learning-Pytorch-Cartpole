@@ -83,7 +83,7 @@ class QNet(nn.Module):
         dz = float(V_max - V_min) / (num_support - 1)
         batch_id = range(batch_size)
         for j in range(num_support):
-            Tz = np.clip(rewards + masks * (gamma ** (n_step + 1)) * (V_min + j * dz), V_min, V_max)
+            Tz = np.clip(rewards + masks * (gamma ** n_step) * (V_min + j * dz), V_min, V_max)
             bj = (Tz - V_min) / dz
 
             lj = np.floor(bj).astype(np.int64)
