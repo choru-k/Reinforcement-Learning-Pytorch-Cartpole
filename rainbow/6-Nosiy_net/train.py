@@ -14,6 +14,11 @@ from tensorboardX import SummaryWriter
 from config import env_name, initial_exploration, batch_size, update_target, goal_score, log_interval, device, replay_memory_capacity, lr
 
 
+def get_action(state, target_net, epsilon, env):
+    if np.random.rand() <= epsilon:
+        return env.action_space.sample()
+    else:
+        return target_net.get_action(state)
 
 def update_target_model(online_net, target_net):
     # Target <- Net
@@ -43,6 +48,7 @@ def main():
     target_net.train()
     memory = Memory(replay_memory_capacity)
     running_score = 0
+    epsilon = 1.0
     steps = 0
     loss = 0
 
@@ -55,10 +61,9 @@ def main():
         state = state.unsqueeze(0)
 
         while not done:
-
             steps += 1
 
-            action = target_net.get_action(state)
+            action = get_action(state, target_net, epsilon, env)
             next_state, reward, done, _ = env.step(action)
 
             next_state = torch.Tensor(next_state)
@@ -74,6 +79,8 @@ def main():
             state = next_state
 
             if steps > initial_exploration:
+                epsilon -= 0.00005
+                epsilon = max(epsilon, 0.1)
 
                 batch = memory.sample(batch_size)
                 loss = QNet.train_model(online_net, target_net, optimizer, batch)
@@ -84,8 +91,8 @@ def main():
         score = score if score == 500.0 else score + 1
         running_score = 0.99 * running_score + 0.01 * score
         if e % log_interval == 0:
-            print('{} episode | score: {:.2f} '.format(
-                e, running_score))
+            print('{} episode | score: {:.2f} | epsilon: {:.2f}'.format(
+                e, running_score, epsilon))
             writer.add_scalar('log/score', float(running_score), e)
             writer.add_scalar('log/loss', float(loss), e)
 

@@ -68,6 +68,7 @@ class Memory_With_TDError(object):
 
 
         td_error = QNet.get_td_error(net, target_net, batch.state, batch.next_state, batch.action, batch.reward, batch.mask)
+        td_error = td_error.detach()
 
         td_error_idx = 0
         for idx in indexes:

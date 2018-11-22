@@ -16,7 +16,6 @@ class Distributional_C51(nn.Module):
         self.z = torch.Tensor([V_min + i * self.dz for i in range(num_support)])
 
         self.fc1 = nn.Linear(num_inputs, 128)
-        # self.fc2 = nn.Linear(128, 128)
         self.fc2 = nn.Linear(128, num_outputs * num_support)
 
         for m in self.modules():
@@ -82,7 +81,7 @@ class Distributional_C51(nn.Module):
         m_prob = cls.get_m(rewards, masks, prob_next_states_action)
         m_prob = torch.tensor(m_prob)
 
-        m_prob = m_prob / torch.sum(m_prob, dim=1, keepdim=True)
+        m_prob = (m_prob / torch.sum(m_prob, dim=1, keepdim=True)).detach()
         expand_dim_action = torch.unsqueeze(actions, -1)
         p = torch.sum(online_net(states) * expand_dim_action.float(), dim=1)
         loss = -torch.sum(m_prob * torch.log(p + 1e-20), 1)

@@ -67,7 +67,6 @@ class QNet(nn.Module):
         rewards = torch.Tensor(batch.reward)
         masks = torch.Tensor(batch.mask)
 
-        target_net.fc2.reset_noise()
         pred = online_net(states).squeeze(1)
         next_pred = target_net(next_states).squeeze(1)
 
@@ -79,11 +78,14 @@ class QNet(nn.Module):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        online_net.reset_noise()
 
         return loss
 
     def get_action(self, input):
-        self.fc2.reset_noise()
         qvalue = self.forward(input)
         _, action = torch.max(qvalue, 1)
         return action.numpy()[0]
+
+    def reset_noise(self):
+        self.fc2.reset_noise()

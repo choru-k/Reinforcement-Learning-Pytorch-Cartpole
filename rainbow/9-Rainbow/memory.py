@@ -1,14 +1,14 @@
 import random
 import numpy as np
-from collections import namedtuple, deque
 import torch
+from collections import namedtuple, deque
 from model import QNet
 from config import small_epsilon, gamma, alpha, device, n_step
 
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward', 'mask'))
 
 
-class Memory_With_TDError(object):
+class Memory(object):
     def __init__(self, capacity):
         self.memory = []
         self.memory_probabiliy = []
@@ -66,8 +66,8 @@ class Memory_With_TDError(object):
         weights = torch.Tensor(weights).to(device)
         weights = weights / weights.max()
 
-
         td_error = QNet.get_loss(net, target_net, batch.state, batch.next_state, batch.action, batch.reward, batch.mask)
+        td_error = td_error.detach()
 
         td_error_idx = 0
         for idx in indexes:

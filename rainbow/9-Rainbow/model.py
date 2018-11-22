@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 import numpy as np
+import math
 
-from config import gamma, sigma_zero, n_step, num_support, V_max, V_min, batch_size
+from config import batch_size, num_support, gamma, V_max, V_min, sigma_zero, n_step
 
 class NoisyLinear(nn.Module):
   def __init__(self, in_features, out_features):
@@ -41,7 +41,6 @@ class NoisyLinear(nn.Module):
   def forward(self, input):
     return F.linear(input, self.weight_mu + self.weight_sigma * self.weight_epsilon, self.bias_mu + self.bias_sigma * self.bias_epsilon)
 
-
 class QNet(nn.Module):
     def __init__(self, num_inputs, num_outputs):
         super(QNet, self).__init__()
@@ -51,18 +50,17 @@ class QNet(nn.Module):
         self.dz = float(V_max - V_min) / (num_support - 1)
         self.z = torch.Tensor([V_min + i * self.dz for i in range(num_support)])
 
-
         self.fc = nn.Linear(num_inputs, 128)
         self.fc_adv = NoisyLinear(128, num_outputs * num_support)
         self.fc_val = nn.Linear(128, num_support)
-
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform(m.weight)
 
-    def forward(self, x):
-        x = F.relu(self.fc(x))
+
+    def forward(self, input):
+        x = F.relu(self.fc(input))
         adv = self.fc_adv(x)
         val = self.fc_val(x)
 
@@ -72,6 +70,21 @@ class QNet(nn.Module):
         z = z.view(-1, self.num_outputs, num_support)
         p = nn.Softmax(dim=2)(z)
         return p
+
+    def get_Qvalue(self, input):
+        p = self.forward(input)
+        p = p.squeeze(0)
+        z_space = self.z.repeat(self.num_outputs, 1)
+        Q = torch.sum(p * z_space, dim=1)
+        return Q
+
+    def reset_noise(self):
+        self.fc_adv.reset_noise()
+
+    def get_action(self, input):
+        Q = self.get_Qvalue(input)
+        action = torch.argmax(Q)
+        return action.item()
 
     @classmethod
     def get_m(cls, _rewards, _masks, _prob_next_states_action):
@@ -115,32 +128,23 @@ class QNet(nn.Module):
         m_prob = cls.get_m(rewards, masks, prob_next_states_action)
         m_prob = torch.tensor(m_prob)
 
-        m_prob = m_prob / torch.sum(m_prob, dim=1, keepdim=True)
+        m_prob = (m_prob / torch.sum(m_prob, dim=1, keepdim=True)).detach()
         expand_dim_action = torch.unsqueeze(actions, -1)
         p = torch.sum(online_net(states) * expand_dim_action.float(), dim=1)
         loss = -torch.sum(m_prob * torch.log(p + 1e-20), 1)
-
+        
         return loss
+
 
     @classmethod
     def train_model(cls, online_net, target_net, optimizer, batch, weights):
         loss = cls.get_loss(online_net, target_net, batch.state, batch.next_state, batch.action, batch.reward, batch.mask)
+        loss = (loss * weights.detach()).mean()
 
         optimizer.zero_grad()
-        (loss * weights).mean().backward()
+        loss.backward()
         optimizer.step()
 
-        return loss.mean()
+        online_net.reset_noise()
 
-
-    def get_action(self, input):
-        self.reset_noise()
-        p = self.forward(input)
-        p = p.squeeze(0)
-        z_space = self.z.repeat(self.num_outputs, 1)
-        Q = torch.sum(p * z_space, dim=1)
-        action = torch.argmax(Q)
-        return action.item()
-
-    def reset_noise(self):
-        self.fc_adv.reset_noise()
+        return loss
