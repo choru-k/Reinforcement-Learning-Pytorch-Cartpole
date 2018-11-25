@@ -12,6 +12,8 @@ Pytorch Cartpole 예제입니다. 성능보다는 최대한 논문대로 실제�
 
 ## PG
 - [x] REINFORCE
+- [x] Actor Critic
+- [x] A2C
 
 ## Parallel
 - [ ] A3C
