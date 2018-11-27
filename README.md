@@ -54,3 +54,9 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 [17][EXPLORATION BY RANDOM NETWORK DISTILLATION](https://openreview.net/pdf?id=H1lJJnR5Ym)  
 [18][Distributional Reinforcement Learning with Quantile Regression](https://arxiv.org/pdf/1710.10044.pdf)  
 [19][Implicit Quantile Networks for Distributional Reinforcement Learning](https://arxiv.org/pdf/1806.06923.pdf)  
+
+## Acknowledgements
+- https://github.com/openai/baselines
+- https://github.com/reinforcement-learning-kr/pg_travel
+- https://github.com/reinforcement-learning-kr/distributional_rl
+- https://github.com/Kaixhin/Rainbow
