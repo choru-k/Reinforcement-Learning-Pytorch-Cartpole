@@ -20,10 +20,13 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [x] Actor Critic [[10]](#reference)
 - [x] Advantage Actor Critic
 - [x] GAE(Generalized Advantage Estimation) [[12]](#reference)
+- [ ] ACER [[21]](#reference)
+- [ ] NPG [[20]](#reference)
 - [ ] TRPO [[13]](#reference)
 - [ ] PPO [[14]](#reference)
 
 ## Parallel
+- [x] Asynchronous Q-learning [[11]](#reference)
 - [ ] A3C (Asynchronous Advange Actor Critice) [[11]](#reference)
 
 ## Will
@@ -32,6 +35,7 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [ ] RND [[17]](#reference)
 - [ ] QRDQN [[18]](#reference)
 - [ ] IQN [[19]](#reference)
+- [ ] PAAC
 
 
 ## Reference
@@ -54,6 +58,9 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 [17][EXPLORATION BY RANDOM NETWORK DISTILLATION](https://openreview.net/pdf?id=H1lJJnR5Ym)  
 [18][Distributional Reinforcement Learning with Quantile Regression](https://arxiv.org/pdf/1710.10044.pdf)  
 [19][Implicit Quantile Networks for Distributional Reinforcement Learning](https://arxiv.org/pdf/1806.06923.pdf)  
+[20][A Natural Policy Gradient](https://papers.nips.cc/paper/2073-a-natural-policy-gradient.pdf)  
+[21][SAMPLE EFFICIENT ACTOR-CRITIC WITH EXPERIENCE REPLAY](https://arxiv.org/pdf/1611.01224.pdf)  
+
 
 ## Acknowledgements
 - https://github.com/openai/baselines

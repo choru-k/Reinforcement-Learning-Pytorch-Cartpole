@@ -4,7 +4,6 @@ import gym
 import argparse
 import numpy as np
 
-from memory import Memory
 from model import Model
 from worker import Worker
 from shared_adam import SharedAdam
