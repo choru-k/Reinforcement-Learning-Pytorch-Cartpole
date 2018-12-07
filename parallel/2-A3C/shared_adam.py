@@ -1,7 +1,3 @@
-"""
-Shared optimizer, the parameters in the optimizer will shared in the multiprocessors.
-"""
-
 import torch
 class SharedAdam(torch.optim.Adam): # extend a pytorch optimizer so it shares grads across processes
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0):

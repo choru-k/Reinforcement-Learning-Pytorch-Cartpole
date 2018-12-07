@@ -20,16 +20,16 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [x] Actor Critic [[10]](#reference)
 - [x] Advantage Actor Critic
 - [x] GAE(Generalized Advantage Estimation) [[12]](#reference)
-- [ ] TNPG [[20]](#reference)
+- [x] TNPG [[20]](#reference)
 - [ ] TRPO [[13]](#reference)
 - [ ] PPO [[14]](#reference)
-- [ ] ACER [[21]](#reference)
 
 ## Parallel
 - [x] Asynchronous Q-learning [[11]](#reference)
-- [ ] A3C (Asynchronous Advange Actor Critice) [[11]](#reference)
+- [x] A3C (Asynchronous Advange Actor Critice) [[11]](#reference)
 
 ## Will
+- [ ] ACER [[21]](#reference)
 - [ ] APE-X [[15]](#reference)
 - [ ] R2D2 [[16]](#reference)
 - [ ] RND [[17]](#reference)

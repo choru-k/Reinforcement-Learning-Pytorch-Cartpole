@@ -4,28 +4,13 @@ import torch.multiprocessing as mp
 import numpy as np
 from model import LocalModel
 from memory import Memory
-
-def record(global_ep, global_ep_r, ep_r, res_queue, name):
-    with global_ep.get_lock():
-        global_ep.value += 1
-    with global_ep_r.get_lock():
-        if global_ep_r.value == 0.:
-            global_ep_r.value = ep_r
-        else:
-            global_ep_r.value = global_ep_r.value * 0.99 + ep_r * 0.01
-    res_queue.put(global_ep_r.value)
-    print(
-        name,
-        "Ep:", global_ep.value,
-        "| Ep_r:", global_ep_r.value,
-    )
+from config import env_name, n_step, max_episode, log_interval
 
 class Worker(mp.Process):
-    def __init__(self, global_model, global_optimizer, global_ep, global_ep_r, res_queue, name, args):
+    def __init__(self, global_model, global_optimizer, global_ep, global_ep_r, res_queue, name):
         super(Worker, self).__init__()
-        self.args = args
 
-        self.env = gym.make(self.args.env_name)
+        self.env = gym.make(env_name)
         self.env.seed(500)
 
         self.name = 'w%i' % name
@@ -34,6 +19,19 @@ class Worker(mp.Process):
         self.local_model = LocalModel(self.env.observation_space.shape[0], self.env.action_space.n)
         self.num_actions = self.env.action_space.n
 
+    def record(self, score, loss):
+        with self.global_ep.get_lock():
+            self.global_ep.value += 1
+        with self.global_ep_r.get_lock():
+            if self.global_ep_r.value == 0.:
+                self.global_ep_r.value = score
+            else:
+                self.global_ep_r.value = 0.99 * self.global_ep_r.value + 0.01 * score
+        if self.global_ep.value % log_interval == 0:
+            print('{} , {} episode | score: {:.2f}'.format(
+                self.name, self.global_ep.value, self.global_ep_r.value))
+
+        self.res_queue.put([self.global_ep.value, self.global_ep_r.value, loss])
 
     def get_action(self, policy, num_actions):
         policy = policy.data.numpy()[0]
@@ -41,9 +39,8 @@ class Worker(mp.Process):
         return action
 
     def run(self):
-        self.local_model.train()
-        total_step = 1
-        while self.global_ep.value < self.args.MAX_EP:
+
+        while self.global_ep.value < max_episode:
             self.local_model.pull_from_global_model(self.global_model)
             done = False
             score = 0
@@ -52,10 +49,9 @@ class Worker(mp.Process):
             state = self.env.reset()
             state = torch.Tensor(state)
             state = state.unsqueeze(0)
-            memory = Memory(100)
+            memory = Memory(n_step)
 
             while True:
-                self.local_model.eval()
                 policy, value = self.local_model(state)
                 action = self.get_action(policy, self.num_actions)
 
@@ -65,21 +61,22 @@ class Worker(mp.Process):
 
                 mask = 0 if done else 1
                 reward = reward if not done or score == 499 else -1
+                action_one_hot = torch.zeros(2)
+                action_one_hot[action] = 1
+                memory.push(state, next_state, action_one_hot, reward, mask)
+
                 score += reward
+                state = next_state
 
-                memory.push(state, next_state, action, reward, mask)
-
-                if len(memory) == 10 or done:
+                if len(memory) == n_step or done:
                     batch = memory.sample()
-                    self.local_model.push_to_global_model(batch, self.global_model, self.global_optimizer, self.args)
+                    loss = self.local_model.push_to_global_model(batch, self.global_model, self.global_optimizer)
                     self.local_model.pull_from_global_model(self.global_model)
-                    memory = Memory(100)
+                    memory = Memory(n_step)
 
                     if done:
-                        record(self.global_ep, self.global_ep_r, score, self.res_queue, self.name)
+                        running_score = self.record(score, loss)
                         break
 
 
-                total_step += 1
-                state = next_state
         self.res_queue.put(None)

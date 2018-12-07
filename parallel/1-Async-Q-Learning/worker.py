@@ -46,11 +46,9 @@ class Worker(mp.Process):
         running_score = 0
         epsilon = 1.0
         steps = 0
-        total_step = 0
         while self.global_ep.value < max_episode:
             if self.global_ep_r.value > goal_score:
                 break
-            total_step +=1
             done = False
 
             score = 0
