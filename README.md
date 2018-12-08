@@ -21,7 +21,7 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [x] Advantage Actor Critic
 - [x] GAE(Generalized Advantage Estimation) [[12]](#reference)
 - [x] TNPG [[20]](#reference)
-- [ ] TRPO [[13]](#reference)
+- [x] TRPO [[13]](#reference)
 - [ ] PPO [[14]](#reference)
 
 ## Parallel
