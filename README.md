@@ -27,10 +27,10 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 ## Parallel
 - [x] Asynchronous Q-learning [[11]](#reference)
 - [x] A3C (Asynchronous Advange Actor Critice) [[11]](#reference)
-
-## Will
 - [ ] ACER [[21]](#reference)
 - [ ] APE-X [[15]](#reference)
+
+## Will
 - [ ] R2D2 [[16]](#reference)
 - [ ] RND [[17]](#reference)
 - [ ] QRDQN [[18]](#reference)
@@ -67,3 +67,5 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - https://github.com/reinforcement-learning-kr/pg_travel
 - https://github.com/reinforcement-learning-kr/distributional_rl
 - https://github.com/Kaixhin/Rainbow
+- https://github.com/Kaixhin/ACER
+- https://github.com/higgsfield/RL-Adventure-2
