@@ -27,7 +27,7 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 ## Parallel
 - [x] Asynchronous Q-learning [[11]](#reference)
 - [x] A3C (Asynchronous Advange Actor Critice) [[11]](#reference)
-- [ ] ACER [[21]](#reference)
+- [x] ACER [[21]](#reference)
 - [ ] APE-X [[15]](#reference)
 
 ## Will
