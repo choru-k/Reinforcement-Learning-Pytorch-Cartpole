@@ -48,8 +48,7 @@ class Worker(mp.Process):
             trajectory = self.memory.sample()
         else:
             trajectory, score = self.run_env()
-        loss = self.local_model.get_loss(on_policy, trajectory, self.global_average_model)
-        self.local_model.update_model(loss, self.global_optimizer, self.global_model, self.global_average_model)
+        loss = self.local_model.train(on_policy, trajectory, self.global_average_model, self.global_optimizer, self.global_model, self.global_average_model)
         if on_policy:
             self.record(score, loss)
 

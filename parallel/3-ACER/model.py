@@ -33,21 +33,6 @@ class LocalModel(Model):
     def pull_from_global_model(self, global_model):
         self.load_state_dict(global_model.state_dict())
 
-    def update_model(self, loss, global_optimizer, global_model, global_average_model):
-        global_optimizer.zero_grad()
-        loss.backward()
-        # nn.utils.clip_grad_norm_(self.parameters(), max_gradient_norm)
-
-        for lp, gp in zip(self.parameters(), global_model.parameters()):
-            if gp.grad is not None:
-                return
-            gp.grad = lp.grad
-
-        global_optimizer.step()
-
-        for gp, gap in zip(global_model.parameters(), global_average_model.parameters()):
-            gap = trust_region_decay * gap + (1 - trust_region_decay) * gp
-
 
     def compute_q_retraces(self, rewards, masks, values, q_actions, rho_actions, next_value):
         q_retraces = torch.zeros(rewards.size())
@@ -62,7 +47,7 @@ class LocalModel(Model):
         return q_retraces
 
 
-    def get_loss(self, on_policy, trajectory, average_model):
+    def train(self, on_policy, trajectory, average_model, global_optimizer, global_model, global_average_model):
         states, next_states, actions, rewards, masks, old_policies = trajectory
         states = torch.stack(states)
         next_states = torch.stack(next_states)
@@ -77,11 +62,7 @@ class LocalModel(Model):
 
         Q_actions = Qs.gather(1, actions).view(-1)
 
-        if not on_policy:
-            rhos = policies / old_policies
-        else:
-            rhos = torch.zeros(policies.size()).fill_(1)
-
+        rhos = (policies / old_policies).clamp(max=1)
         rho_actions = rhos.gather(1, actions).view(-1)
 
         if masks[-1] == 0:
@@ -102,19 +83,11 @@ class LocalModel(Model):
 
         value_loss = ((Qret - Q_actions) ** 2).mean()
 
-
-        g_1 = ((1 / log_policy_action) * (
-            rho_actions.clamp(max=truncation_clip) * (Qrets - Vs)
-        ))
-        g_2 = ((1 / log_policy) * (
-            (1 - truncation_clip / rhos).clamp(min=0) * policies * (Qs - Vs.view(-1,1).expand_as(Qs))
-        )).sum(1)
-        g = (g_1 + g_2).detach()
+        g = torch.autograd.grad(-actor_loss, policies)[0]
         average_policies, _, _ = average_model(states)
-        k = (average_policies / policies).gather(1, actions).view(-1)
+        k = (average_policies / policies)
 
         kl = (average_policies * torch.log(average_policies / policies)).sum(1).mean(0)
-
 
         k_dot_g = (k * g).sum()
         k_dot_k = (k * k).sum()
@@ -123,6 +96,26 @@ class LocalModel(Model):
         trust_region_actor_loss = actor_loss + adj * kl
 
         loss = trust_region_actor_loss + value_loss
+        global_optimizer.zero_grad()
+
+        torch.autograd.backward(policies, grad_tensors=(-g), retain_graph=True)
+
+        value_loss.backward()
+        nn.utils.clip_grad_norm_(self.parameters(), max_gradient_norm)
+
+        for lp, gp in zip(self.parameters(), global_model.parameters()):
+            gp.grad = lp.grad
+        global_optimizer.step()
+
+        for gp, gap in zip(global_model.parameters(), global_average_model.parameters()):
+            gap = trust_region_decay * gap + (1 - trust_region_decay) * gp
+
+
+        # grad_actor = torch.autograd.grad(policies, self.parameters(), grad_outputs=-g, allow_unused=True,retain_graph=True)
+        # grad_value = torch.autograd.grad(value_loss, self.parameters(), allow_unused=True, retain_graph=True)
+
+
+        # grads = grad_actor + grad_value
 
         return loss
 

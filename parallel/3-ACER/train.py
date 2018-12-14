@@ -27,8 +27,7 @@ def main():
 
     writer = SummaryWriter('logs')
 
-    # n = mp.cpu_count()
-    n = 1
+    n = mp.cpu_count()
     workers = [Worker(global_model, global_average_model, global_optimizer, global_ep, global_ep_r, res_queue, i) for i in range(n)]
     [w.start() for w in workers]
     res = []
