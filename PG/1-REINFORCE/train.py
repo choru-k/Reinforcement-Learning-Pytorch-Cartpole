@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from model import QNet
 from tensorboardX import SummaryWriter
 
+from memory import Memory
 from config import env_name, goal_score, log_interval, device, lr, gamma
 
 
@@ -36,7 +37,7 @@ def main():
 
     for e in range(3000):
         done = False
-        memory = []
+        memory = Memory()
 
         score = 0
         state = env.reset()
@@ -55,17 +56,15 @@ def main():
             mask = 0 if done else 1
             reward = reward if not done or score == 499 else -1
 
-            memory.append([state, next_state, action, reward, mask])
-
+            action_one_hot = torch.zeros(2)
+            action_one_hot[action] = 1
+            memory.push(state, next_state, action_one_hot, reward, mask)
+    
             score += reward
             state = next_state
 
-        sum_reward = 0
-        memory.reverse()
-        for t, transition in enumerate(memory):
-            _, _, _, reward, _ = transition
-            sum_reward = (reward + gamma * sum_reward)
-            loss = QNet.train_model(net, optimizer, transition, sum_reward)
+        loss = QNet.train_model(net, memory.sample(), optimizer)
+            
 
         score = score if score == 500.0 else score + 1
         running_score = 0.99 * running_score + 0.01 * score

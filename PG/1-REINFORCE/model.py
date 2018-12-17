@@ -23,20 +23,32 @@ class QNet(nn.Module):
         return policy
 
     @classmethod
-    def train_model(cls, net, optimizer, transition, reward):
-        state, next_state, action, _, mask = transition
+    def train_model(cls, net, transitions, optimizer):
+        states, actions, rewards, masks = transitions.state, transitions.action, transitions.reward, transitions.mask
 
-        policy = net(state)
-        policy = policy.view(-1, net.num_outputs)
+        states = torch.stack(states)
+        actions = torch.stack(actions)
+        rewards = torch.Tensor(rewards)
+        masks = torch.Tensor(masks)
 
-        log_policy = torch.log(policy[0])[action]
+        returns = torch.zeros_like(rewards)
 
-        loss = - log_policy * reward
+        running_return = 0
+        for t in reversed(range(len(rewards))):
+            running_return = rewards[t] + gamma * running_return * masks[t]
+            returns[t] = running_return
+        
+        policies = net(states)
+        policies = policies.view(-1, net.num_outputs)
 
+        log_policies = (torch.log(policies) * actions.detach()).sum(dim=1)
+
+        loss = (-log_policies * returns).sum()
+        
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
+        
         return loss
 
     def get_action(self, input):

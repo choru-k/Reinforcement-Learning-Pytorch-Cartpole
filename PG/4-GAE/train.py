@@ -62,7 +62,6 @@ def main():
             score += reward
             state = next_state
 
-        sum_reward = 0
 
         memory = QNet.get_gae(net, memory)
         loss = QNet.train_model(net, optimizer, memory)
