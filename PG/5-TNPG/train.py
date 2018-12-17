@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from model import QNet
 from tensorboardX import SummaryWriter
 
+from memory import Memory
 from config import env_name, goal_score, log_interval, device, lr, gamma
 
 
@@ -24,7 +25,6 @@ def main():
     print('action size:', num_actions)
 
     net = QNet(num_inputs, num_actions)
-
     writer = SummaryWriter('logs')
 
     net.to(device)
@@ -33,9 +33,9 @@ def main():
     steps = 0
     loss = 0
     k=0
-    for e in range(3000):
+    for e in range(30000):
         done = False
-        memory = []
+        memory = Memory() 
 
         score = 0
         state = env.reset()
@@ -56,22 +56,13 @@ def main():
 
             action_one_hot = torch.zeros(2)
             action_one_hot[action] = 1
-            memory.append([state, next_state, action_one_hot, reward, mask])
+            memory.push(state, next_state, action_one_hot, reward, mask)
 
             score += reward
             state = next_state
 
         sum_reward = 0
-        memory.reverse()
-        states, actions, rewards, masks = [], [], [], []
-        for t, transition in enumerate(memory):
-            state, next_state, action, reward, mask = transition
-            sum_reward = (reward + gamma * sum_reward)
-            states.append(state)
-            actions.append(action)
-            rewards.append(sum_reward)
-            masks.append(mask)
-        loss = QNet.train_model(net, (states, actions, rewards, masks), k)
+        loss = QNet.train_model(net, memory.sample(), k)
         k+=1
 
         score = score if score == 500.0 else score + 1

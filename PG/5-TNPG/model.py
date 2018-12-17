@@ -98,17 +98,25 @@ class QNet(nn.Module):
 
     @classmethod
     def train_model(cls, net, transitions, k):
-        states, actions, rewards, masks = transitions
+        states, actions, rewards, masks = transitions.state, transitions.action, transitions.reward, transitions.mask
+
         states = torch.stack(states)
         actions = torch.stack(actions)
         rewards = torch.Tensor(rewards)
         masks = torch.Tensor(masks)
 
-        policy = net(states)
-        policy = policy.view(-1, net.num_outputs)
-        policy_action = (policy * actions.detach()).sum(dim=1)
+        returns = torch.zeros_like(rewards)
 
-        loss = (policy_action * rewards).mean()
+        running_return = 0
+        for t in reversed(range(len(rewards))):
+            running_return = rewards[t] + gamma * running_return * masks[t]
+            returns[t] = running_return
+
+        policies = net(states)
+        policies = policies.view(-1, net.num_outputs)
+        policy_actions = (policies * actions.detach()).sum(dim=1)
+
+        loss = (policy_actions * returns).mean()
 
         loss_grad = torch.autograd.grad(loss, net.parameters())
         loss_grad = flat_grad(loss_grad)
