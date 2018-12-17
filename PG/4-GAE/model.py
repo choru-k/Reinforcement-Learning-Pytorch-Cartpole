@@ -3,14 +3,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from config import gamma, lambda_gae
+from config import gamma, lambda_gae, ciritic_coefficient, entropy_coefficient
 
 from collections import namedtuple
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward', 'mask', 'value', 'return_value', 'advantage'))
 
-class QNet(nn.Module):
+class GAE(nn.Module):
     def __init__(self, num_inputs, num_outputs):
-        super(QNet, self).__init__()
+        super(GAE, self).__init__()
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
 
@@ -29,67 +29,47 @@ class QNet(nn.Module):
         return policy, value
 
     @classmethod
-    def get_gae(cls, net, memory):
-        states, rewards, masks = [], [], []
-        for item in memory:
-            [state, next_state, action, reward, mask] = item
-            states.append(state)
-            rewards.append(reward)
-            masks.append(mask)
-        states = torch.stack(states)
-        rewards = torch.Tensor(rewards)
-        masks = torch.Tensor(masks)
+    def get_gae(self, values, rewards, masks):
         returns = torch.zeros_like(rewards)
         advantages = torch.zeros_like(rewards)
-        _, values = net.forward(states)
 
-        running_returns = 0
-        running_advantages = 0
+        running_return = 0
+        previous_value = 0
+        running_advantage = 0
 
-        for t in reversed(range(len(rewards) - 1)):
-            next_value = values.data[t+1]
-            value = values.data[t]
-            running_returns = rewards[t] + running_returns * gamma * masks[t]
+        for t in reversed(range(len(rewards))):
+            running_return = rewards[t] + gamma * running_return * masks[t]
+            running_tderror = rewards[t] + gamma * previous_value * masks[t] - values.data[t]
+            running_advantage = running_tderror + (gamma * lambda_gae) * running_advantage * masks[t]
 
-            delta = rewards[t] + gamma * masks[t] * value - next_value
-            running_advantages = delta + gamma * lambda_gae * masks[t] * running_advantages
+            returns[t] = running_return
+            previous_value = values.data[t]
+            advantages[t] = running_advantage
 
-
-            returns[t] = running_returns
-            advantages[t] = running_advantages
-
-        memory2 = []
-        for t, item in enumerate(memory):
-            [state, next_state, action, reward, mask] = item
-            return_value = returns[t]
-            advantage = advantages[t]
-            value = values.data[t]
-            memory2.append(Transition(state, next_state, action, reward, mask, value, return_value, advantage))
-
-        return memory2
+        return returns, advantages
 
     @classmethod
-    def train_model(cls, net, optimizer, memory):
-        states, next_states, actions, rewards, masks, values, return_values, advantages = Transition(*zip(*memory))
+    def train_model(cls, net, transitions, optimizer):
+        states, actions, rewards, masks = transitions.state, transitions.action, transitions.reward, transitions.mask
 
         states = torch.stack(states)
         actions = torch.stack(actions)
+        rewards = torch.Tensor(rewards)
+        masks = torch.Tensor(masks)
 
-        values = torch.Tensor(values)
-        return_values = torch.Tensor(values)
-        advantages = torch.Tensor(advantages)
+        policies, values = net(states)
+        policies = policies.view(-1, net.num_outputs)
+        values = values.view(-1)
 
+        returns, advantages = net.get_gae(values.view(-1).detach(), rewards, masks)
 
-        policy, _ = net(states)
-        policy = policy.view(-1, net.num_outputs)
-        policy_action = (policy * actions).sum(dim=1)
+        log_policies = (torch.log(policies) * actions.detach()).sum(dim=1)
+        actor_loss = -(log_policies * advantages).sum()
+        critic_loss = (returns.detach() - values).pow(2).sum()
+        
+        entropy = (torch.log(policies) * policies).sum(1).sum()
 
-        log_policy = torch.log(policy_action)
-        loss_policy = - log_policy * advantages
-        loss_value = F.mse_loss(values, return_values)
-        entropy = (torch.log(policy) * policy).sum(1)
-
-        loss = loss_policy.sum() + loss_value.sum() - 0.1 * entropy.sum()
+        loss = actor_loss + ciritic_coefficient * critic_loss - entropy_coefficient * entropy
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

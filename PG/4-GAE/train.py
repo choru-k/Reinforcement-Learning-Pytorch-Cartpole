@@ -7,9 +7,10 @@ import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-from model import QNet
+from model import GAE
 from tensorboardX import SummaryWriter
 
+from memory import Memory
 from config import env_name, goal_score, log_interval, device, lr, gamma
 
 
@@ -23,7 +24,7 @@ def main():
     print('state size:', num_inputs)
     print('action size:', num_actions)
 
-    net = QNet(num_inputs, num_actions)
+    net = GAE(num_inputs, num_actions)
 
     optimizer = optim.Adam(net.parameters(), lr=lr)
     writer = SummaryWriter('logs')
@@ -34,9 +35,9 @@ def main():
     steps = 0
     loss = 0
 
-    for e in range(3000):
+    for e in range(30000):
         done = False
-        memory = []
+        memory = Memory() 
 
         score = 0
         state = env.reset()
@@ -57,14 +58,12 @@ def main():
 
             action_one_hot = torch.zeros(2)
             action_one_hot[action] = 1
-            memory.append([state, next_state, action_one_hot, reward, mask])
+            memory.push(state, next_state, action_one_hot, reward, mask)
 
             score += reward
             state = next_state
 
-
-        memory = QNet.get_gae(net, memory)
-        loss = QNet.train_model(net, optimizer, memory)
+        loss = GAE.train_model(net, memory.sample(), optimizer)
 
         score = score if score == 500.0 else score + 1
         running_score = 0.99 * running_score + 0.01 * score
