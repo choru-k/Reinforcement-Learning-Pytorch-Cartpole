@@ -75,9 +75,9 @@ def conjugate_gradient(net, states, loss_grad, n_step=10, residual_tol=1e-10):
             break
     return x
 
-class QNet(nn.Module):
+class TRPO(nn.Module):
     def __init__(self, num_inputs, num_outputs):
-        super(QNet, self).__init__()
+        super(TRPO, self).__init__()
         self.t = 0
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
@@ -90,18 +90,26 @@ class QNet(nn.Module):
                 nn.init.xavier_uniform(m.weight)
 
     def forward(self, input):
-        x = torch.tanh(self.fc_1(input))
+        x = torch.relu(self.fc_1(input))
         policy = F.softmax(self.fc_2(x))
 
         return policy
 
     @classmethod
-    def train_model(cls, net, transitions, k):
-        states, actions, rewards, masks = transitions
+    def train_model(cls, net, transitions):
+        states, actions, rewards, masks = transitions.state, transitions.action, transitions.reward, transitions.mask
+
         states = torch.stack(states)
         actions = torch.stack(actions)
         rewards = torch.Tensor(rewards)
         masks = torch.Tensor(masks)
+
+        returns = torch.zeros_like(rewards)
+
+        running_return = 0
+        for t in reversed(range(len(rewards))):
+            running_return = rewards[t] + gamma * running_return * masks[t]
+            returns[t] = running_return
 
         policy = net(states)
         policy = policy.view(-1, net.num_outputs)
@@ -111,7 +119,7 @@ class QNet(nn.Module):
         old_policy = old_policy.view(-1, net.num_outputs)
         old_policy_action = (old_policy * actions.detach()).sum(dim=1)
 
-        surrogate_loss = ((policy_action / old_policy_action) * rewards).mean()
+        surrogate_loss = ((policy_action / old_policy_action) * returns).mean()
 
         surrogate_loss_grad = torch.autograd.grad(surrogate_loss, net.parameters())
         surrogate_loss_grad = flat_grad(surrogate_loss_grad)
@@ -130,7 +138,7 @@ class QNet(nn.Module):
             policy = net(states)
             policy = policy.view(-1, net.num_outputs)
             policy_action = (policy * actions.detach()).sum(dim=1)
-            surrogate_loss = ((policy_action / old_policy_action) * rewards).mean()
+            surrogate_loss = ((policy_action / old_policy_action) * returns).mean()
 
             kl = kl_divergence(policy, old_policy)
             kl = kl.mean()
@@ -144,6 +152,6 @@ class QNet(nn.Module):
     def get_action(self, input):
         policy = self.forward(input)
         policy = policy[0].data.numpy()
-
+            
         action = np.random.choice(self.num_outputs, 1, p=policy)[0]
         return action

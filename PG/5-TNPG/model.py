@@ -76,9 +76,9 @@ def conjugate_gradient(net, states, loss_grad, n_step=10, residual_tol=1e-10):
             break
     return x
 
-class QNet(nn.Module):
+class TNPG(nn.Module):
     def __init__(self, num_inputs, num_outputs):
-        super(QNet, self).__init__()
+        super(TNPG, self).__init__()
         self.t = 0
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
@@ -97,7 +97,7 @@ class QNet(nn.Module):
         return policy
 
     @classmethod
-    def train_model(cls, net, transitions, k):
+    def train_model(cls, net, transitions):
         states, actions, rewards, masks = transitions.state, transitions.action, transitions.reward, transitions.mask
 
         states = torch.stack(states)

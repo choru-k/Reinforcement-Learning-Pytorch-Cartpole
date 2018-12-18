@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-from model import QNet
+from model import TNPG
 from tensorboardX import SummaryWriter
 
 from memory import Memory
@@ -24,7 +24,7 @@ def main():
     print('state size:', num_inputs)
     print('action size:', num_actions)
 
-    net = QNet(num_inputs, num_actions)
+    net = TNPG(num_inputs, num_actions)
     writer = SummaryWriter('logs')
 
     net.to(device)
@@ -32,10 +32,9 @@ def main():
     running_score = 0
     steps = 0
     loss = 0
-    k=0
     for e in range(30000):
         done = False
-        memory = Memory() 
+        memory = Memory()
 
         score = 0
         state = env.reset()
@@ -61,9 +60,7 @@ def main():
             score += reward
             state = next_state
 
-        sum_reward = 0
-        loss = QNet.train_model(net, memory.sample(), k)
-        k+=1
+        loss = TNPG.train_model(net, memory.sample())
 
         score = score if score == 500.0 else score + 1
         running_score = 0.99 * running_score + 0.01 * score
