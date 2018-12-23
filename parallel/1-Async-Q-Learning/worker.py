@@ -43,7 +43,6 @@ class Worker(mp.Process):
             return self.target_net.get_action(state)
 
     def run(self):
-        running_score = 0
         epsilon = 1.0
         steps = 0
         while self.global_ep.value < max_episode:
@@ -84,7 +83,7 @@ class Worker(mp.Process):
                     loss = QNet.train_model(self.online_net, self.target_net, self.optimizer, batch)
                     memory = Memory(async_update_step)
                     if done:
-                        running_score = self.record(score, epsilon, loss)
+                        self.record(score, epsilon, loss)
                         break
                 if steps % update_target == 0:
                     self.update_target_model()

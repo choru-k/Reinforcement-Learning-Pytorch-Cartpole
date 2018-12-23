@@ -22,20 +22,22 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [x] GAE(Generalized Advantage Estimation) [[12]](#reference)
 - [x] TNPG [[20]](#reference)
 - [x] TRPO [[13]](#reference)
-- [ ] PPO [[14]](#reference)
+- [x] PPO [[14]](#reference)
 
 ## Parallel
 - [x] Asynchronous Q-learning [[11]](#reference)
 - [x] A3C (Asynchronous Advange Actor Critice) [[11]](#reference)
 - [x] ACER [[21]](#reference)
-- [ ] APE-X [[15]](#reference)
+- [ ] PPO [[14]](#reference)
+- [x] APE-X DQN [[15]](#reference)
+- [ ] IMPALA [[23]](#reference)
+- [ ] R2D2 [[16]](#reference)
 
 ## Will
-- [ ] R2D2 [[16]](#reference)
 - [ ] RND [[17]](#reference)
+- [ ] ICM [[22]](#refercence)
 - [ ] QRDQN [[18]](#reference)
 - [ ] IQN [[19]](#reference)
-- [ ] PAAC
 
 
 ## Reference
@@ -60,6 +62,8 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 [19][Implicit Quantile Networks for Distributional Reinforcement Learning](https://arxiv.org/pdf/1806.06923.pdf)  
 [20][A Natural Policy Gradient](https://papers.nips.cc/paper/2073-a-natural-policy-gradient.pdf)  
 [21][SAMPLE EFFICIENT ACTOR-CRITIC WITH EXPERIENCE REPLAY](https://arxiv.org/pdf/1611.01224.pdf)  
+[22][Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/pdf/1705.05363.pdf)
+[23][IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures](https://arxiv.org/pdf/1802.01561.pdf)
 
 
 ## Acknowledgements
