@@ -5,9 +5,9 @@ import numpy as np
 
 from config import batch_size, gamma, quantile_embedding_dim, num_tau_sample, num_tau_prime_sample, num_quantile_sample
 
-class QRDQN(nn.Module):
+class IQN(nn.Module):
     def __init__(self, num_inputs, num_outputs):
-        super(QRDQN, self).__init__()
+        super(IQN, self).__init__()
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
 

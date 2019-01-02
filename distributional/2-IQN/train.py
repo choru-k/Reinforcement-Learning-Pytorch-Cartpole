@@ -10,7 +10,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 
-from model import QRDQN
+from model import IQN
 from memory import Memory
 
 from config import env_name, initial_exploration, batch_size, update_target, goal_score, log_interval, device, replay_memory_capacity, lr
@@ -37,8 +37,8 @@ def main():
     print('state size:', num_inputs)
     print('action size:', num_actions)
 
-    online_net = QRDQN(num_inputs, num_actions)
-    target_net = QRDQN(num_inputs, num_actions)
+    online_net = IQN(num_inputs, num_actions)
+    target_net = IQN(num_inputs, num_actions)
     update_target_model(online_net, target_net)
 
     optimizer = optim.Adam(online_net.parameters(), lr=lr)
@@ -82,7 +82,7 @@ def main():
                 epsilon = max(epsilon, 0.1)
 
                 batch = memory.sample(batch_size)
-                loss = QRDQN.train_model(online_net, target_net, optimizer, batch)
+                loss = IQN.train_model(online_net, target_net, optimizer, batch)
 
                 if steps % update_target == 0:
                     update_target_model(online_net, target_net)
