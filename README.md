@@ -26,7 +26,7 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 
 ## Parallel
 - [x] Asynchronous Q-learning [[11]](#reference)
-- [x] A3C (Asynchronous Advange Actor Critice) [[11]](#reference)
+- [x] A3C (Asynchronous Advantage Actor Critic) [[11]](#reference)
 - [x] ACER [[21]](#reference)
 - [ ] PPO [[14]](#reference)
 - [x] APE-X DQN [[15]](#reference)
@@ -34,12 +34,12 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [ ] R2D2 [[16]](#reference)
 
 ## Distributional DQN
-- [ ] QRDQN [[18]](#reference)
+- [x] QRDQN [[18]](#reference)
 - [ ] IQN [[19]](#reference)
 
 ## Exploration
-- [ ] RND [[17]](#reference)
 - [ ] ICM [[22]](#refercence)
+- [ ] RND [[17]](#reference)
 
 
 ## Reference
