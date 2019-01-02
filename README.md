@@ -35,7 +35,7 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 
 ## Distributional DQN
 - [x] QRDQN [[18]](#reference)
-- [ ] IQN [[19]](#reference)
+- [x] IQN [[19]](#reference)
 
 ## Exploration
 - [ ] ICM [[22]](#refercence)
