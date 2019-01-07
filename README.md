@@ -22,7 +22,7 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [x] GAE(Generalized Advantage Estimation) [[12]](#reference)
 - [x] TNPG [[20]](#reference)
 - [x] TRPO [[13]](#reference)
-- [x] PPO [[14]](#reference)
+- [x] PPO - Single Version [[14]](#reference)
 
 ## Parallel
 - [x] Asynchronous Q-learning [[11]](#reference)
@@ -40,6 +40,13 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 ## Exploration
 - [ ] ICM [[22]](#refercence)
 - [ ] RND [[17]](#reference)
+
+## POMDP (With RNN)
+- [x] DQN (use state stack)
+- [x] DRQN [[24]](#reference) [[25]](#reference)
+- [x] DRQN (use state stack)
+- [x] DRQN (store Rnn State) [[16]](#reference)
+- [ ] R2D2 - Single Version [[16]](#reference)
 
 
 ## Reference
@@ -65,8 +72,9 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 [20][A Natural Policy Gradient](https://papers.nips.cc/paper/2073-a-natural-policy-gradient.pdf)  
 [21][SAMPLE EFFICIENT ACTOR-CRITIC WITH EXPERIENCE REPLAY](https://arxiv.org/pdf/1611.01224.pdf)  
 [22][Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/pdf/1705.05363.pdf)  
-[23][IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures](https://arxiv.org/pdf/1802.01561.pdf)
-
+[23][IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures](https://arxiv.org/pdf/1802.01561.pdf)  
+[24][Deep Recurrent Q-Learning for Partially Observable MDPs](https://arxiv.org/pdf/1507.06527.pdf)  
+[25][Playing FPS Games with Deep Reinforcement Learning](https://arxiv.org/pdf/1609.05521.pdf)  
 
 ## Acknowledgements
 - https://github.com/openai/baselines
