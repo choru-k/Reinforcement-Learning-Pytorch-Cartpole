@@ -12,10 +12,8 @@ class Memory(object):
         self.capacity = capacity
 
     def push(self, state, next_state, action, reward, mask, rnn_state):
-        
         self.local_memory.append(Transition(state, next_state, action, reward, mask, torch.stack(rnn_state).view(2, -1)))
         if mask == 0:
-            
             self.memory.append(self.local_memory)
             self.local_memory = []
 

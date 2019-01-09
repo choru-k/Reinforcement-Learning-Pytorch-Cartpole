@@ -27,6 +27,9 @@ def update_target_model(online_net, target_net):
     # Target <- Net
     target_net.load_state_dict(online_net.state_dict())
 
+def state_to_partial_observability(state):
+    state = state[[0, 2]]
+    return state
 
 def main():
     env = gym.make(env_name)
@@ -61,8 +64,8 @@ def main():
 
         score = 0
         state = env.reset()
-        state = torch.Tensor(state[[0, 2]]).to(device)
-        # state = torch.Tensor(state).to(device)
+        state = state_to_partial_observability(state)
+        state = torch.Tensor(state).to(device)
 
         hidden = None
 
@@ -72,8 +75,8 @@ def main():
             action, hidden = get_action(state, target_net, epsilon, env, hidden)
             next_state, reward, done, _ = env.step(action)
 
-            next_state = torch.Tensor(next_state[[0, 2]])
-            # next_state = torch.Tensor(next_state)
+            next_state = state_to_partial_observability(next_state)
+            next_state = torch.Tensor(next_state)
 
             mask = 0 if done else 1
             reward = reward if not done or score == 499 else -1
