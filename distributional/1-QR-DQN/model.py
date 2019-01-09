@@ -56,7 +56,7 @@ class QRDQN(nn.Module):
         theta_a_tile = theta_a.view(-1, 1, num_support).expand(-1, num_support, num_support)
         
         error_loss = T_theta_tile - theta_a_tile            
-        huber_loss = nn.SmoothL1Loss(reduction='none')(T_theta_tile, theta_a_tile)
+        huber_loss = F.smooth_l1_loss(theta_a_tile, T_theta_tile.detach(), reduction='none')
         tau = torch.arange(0.5 * (1 / num_support), 1, 1 / num_support).view(1, num_support)
         
         loss = (tau - (error_loss < 0).float()).abs() * huber_loss

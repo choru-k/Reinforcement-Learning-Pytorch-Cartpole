@@ -70,7 +70,7 @@ class IQN(nn.Module):
         z_a_tile = z_a.view(-1, 1, num_tau_sample).expand(-1, num_tau_prime_sample, num_tau_sample)
         
         error_loss = T_z_tile - z_a_tile
-        huber_loss = nn.SmoothL1Loss(reduction='none')(T_z_tile, z_a_tile)
+        huber_loss = F.smooth_l1_loss(z_a_tile, T_z_tile.detach(), reduction='none')
         tau = torch.arange(0, 1, 1 / num_tau_sample).view(1, num_tau_sample)
         
         loss = (tau - (error_loss < 0).float()).abs() * huber_loss
