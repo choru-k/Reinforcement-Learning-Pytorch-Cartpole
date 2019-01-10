@@ -46,7 +46,7 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - [x] DRQN [[24]](#reference) [[25]](#reference)
 - [x] DRQN (use state stack)
 - [x] DRQN (store Rnn State) [[16]](#reference)
-- [ ] R2D2 - Single Version [[16]](#reference)
+- [x] R2D2 - Single Version [[16]](#reference)
 
 
 ## Reference

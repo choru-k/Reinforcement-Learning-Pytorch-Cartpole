@@ -15,3 +15,5 @@ sequence_length = 32
 burn_in_length = 4
 eta = 0.9
 local_mini_batch = 8
+n_step = 2
+over_lapping_length = 16

@@ -48,6 +48,7 @@ class R2D2(nn.Module):
         actions = torch.stack(batch.action).view(batch_size, sequence_length, -1).long()
         rewards = torch.stack(batch.reward).view(batch_size, sequence_length, -1)
         masks = torch.stack(batch.mask).view(batch_size, sequence_length, -1)
+        steps = torch.stack(batch.step).view(batch_size, sequence_length, -1)
         rnn_state = torch.stack(batch.rnn_state).view(batch_size, sequence_length, 2, -1)
 
         [h0, c0] = rnn_state[:, 0, :, :].transpose(0, 1)
@@ -68,13 +69,14 @@ class R2D2(nn.Module):
         actions = slice_burn_in(actions)
         rewards = slice_burn_in(rewards)
         masks = slice_burn_in(masks)
+        steps = slice_burn_in(steps)
         next_pred_online = slice_burn_in(next_pred_online)
         
         pred = pred.gather(2, actions)
 
         _, next_pred_online_action = next_pred_online.max(2)
         
-        target = rewards + masks * gamma * next_pred.gather(2, next_pred_online_action.unsqueeze(2))
+        target = rewards + masks * pow(gamma, steps) * next_pred.gather(2, next_pred_online_action.unsqueeze(2))
 
         td_error = pred - target.detach()
 
