@@ -80,27 +80,22 @@ class Memory(object):
         self.memory_probability = deque(maxlen=capacity)
 
     def td_error_to_prior(self, td_error, lengths):
-        abs_td_error_sum  = td_error.sum(dim=1, keepdim=True).view(-1).abs().detach().numpy()
+        abs_td_error_sum  = td_error.abs().sum(dim=1, keepdim=True).view(-1).detach().numpy()
         lengths_burn = [length - burn_in_length for length in lengths]
-        
-        prior = abs_td_error_sum / lengths_burn
-        return prior 
+
+        prior_max = td_error.abs().max(dim=1, keepdim=True)[0].view(-1).detach().numpy()
+
+        prior_mean = abs_td_error_sum / lengths_burn
+        prior = eta * prior_max + (1 - eta) * prior_mean
+        return prior
 
     def push(self, td_error, batch, lengths):
         # batch.state[local_mini_batch, sequence_length, item]
         prior = self.td_error_to_prior(td_error, lengths)
-
+        
         for i in range(len(batch)):
-            if len(self.memory_probability) > 0:
-                memory_probability = np.array(self.memory_probability)
-                probability_max = max(memory_probability.max(), prior[i])
-                probability_mean = (memory_probability.sum() + prior[i]) / (len(self.memory_probability) + 1)
-            else:
-                probability_max = prior[i]
-                probability_mean = prior[i]
             self.memory.append([Transition(batch.state[i], batch.next_state[i], batch.action[i], batch.reward[i], batch.mask[i], batch.step[i], batch.rnn_state[i]), lengths[i]])
-            p = eta * probability_max + (1 - eta) * probability_mean
-            self.memory_probability.append(p)
+            self.memory_probability.append(prior[i])
         
     def sample(self, batch_size):
         probability = np.array(self.memory_probability)

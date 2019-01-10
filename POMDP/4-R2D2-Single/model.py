@@ -80,9 +80,8 @@ class R2D2(nn.Module):
 
         td_error = pred - target.detach()
 
-        td_error_slice = []
         for idx, length in enumerate(lengths):
-            td_error_slice.append(td_error[idx][:length-burn_in_length][:])
+            td_error[idx][length-burn_in_length:][:] = 0
 
         return td_error
         
