@@ -23,10 +23,7 @@ class R2D2(nn.Module):
         # x [batch_size, sequence_length, num_inputs]
         batch_size = x.size()[0]
         sequence_length = x.size()[1]
-        if hidden is not None:
-            out, hidden = self.lstm(x, hidden)
-        else:
-            out, hidden = self.lstm(x)
+        out, hidden = self.lstm(x, hidden)
 
         out = F.relu(self.fc(out))
         adv = self.fc_adv(out)

@@ -20,10 +20,7 @@ class DRQN(nn.Module):
 
     def forward(self, x, hidden=None):
         # x [batch_size, sequence_length, num_inputs]
-        if hidden is not None:
-            out, hidden = self.lstm(x, hidden)
-        else:
-            out, hidden = self.lstm(x)
+        out, hidden = self.lstm(x, hidden)
 
         out = F.relu(self.fc1(out))
         qvalue = self.fc2(out)

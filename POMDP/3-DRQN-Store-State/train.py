@@ -68,12 +68,12 @@ def main():
         state = state_to_partial_observability(state)
         state = torch.Tensor(state).to(device)
 
-        hidden = None
+        hidden = (torch.Tensor().new_zeros(1, 1, 16), torch.Tensor().new_zeros(1, 1, 16))
 
         while not done:
             steps += 1
 
-            action, hidden = get_action(state, target_net, epsilon, env, hidden)
+            action, new_hidden = get_action(state, target_net, epsilon, env, hidden)
             next_state, reward, done, _ = env.step(action)
 
             next_state = state_to_partial_observability(next_state)
@@ -83,6 +83,7 @@ def main():
             reward = reward if not done or score == 499 else -1
 
             memory.push(state, next_state, action, reward, mask, hidden)
+            hidden = new_hidden
 
             score += reward
             state = next_state

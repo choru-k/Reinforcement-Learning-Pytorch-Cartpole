@@ -1,6 +1,7 @@
 import random
 from collections import namedtuple, deque
 from config import sequence_length
+import numpy as np
 import torch
 
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward', 'mask'))
@@ -27,9 +28,14 @@ class Memory(object):
 
     def sample(self, batch_size):
         batch_state, batch_next_state, batch_action, batch_reward, batch_mask = [], [], [], [], []
-        episodes = random.sample(self.memory, batch_size)
+        p = np.array([len(episode) for episode in self.memory])
+        p = p / p.sum()
+
+        batch_indexes = np.random.choice(np.arange(len(self.memory)), batch_size, p=p)
         
-        for episode in episodes:
+        for batch_idx in batch_indexes:
+            episode = self.memory[batch_idx]
+            
             start = random.randint(0, len(episode) - sequence_length)
             transitions = episode[start:start + sequence_length]
             batch = Transition(*zip(*transitions))
