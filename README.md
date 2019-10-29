@@ -83,3 +83,6 @@ So you can run this example in your computer(maybe it take just only 1~2 minitue
 - https://github.com/Kaixhin/Rainbow
 - https://github.com/Kaixhin/ACER
 - https://github.com/higgsfield/RL-Adventure-2
+
+## Use Cuda
+check this issue. https://github.com/g6ling/Reinforcement-Learning-Pytorch-Cartpole/issues/1
